@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ai智能</title>
+  <style>
+    #msg{
+      margin:0 auto;width: 800px;height: 300px;background-color: rgb(209, 240, 236);
+      padding: 10px;
+      color:#f00;
+      font-size: 40px;
+    }
+    #vs{
+      width:500px;
+      height: 50px;
+      font-size: 1.5rem;
+      margin: 10px auto;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1 style="color: red;text-align: center;">AI智能机器人,学人说话</h1>
+<select id="vs"></select>
+  <div id="msg" "></div>
+  <script>
+
+
+let vs=document.getElementById("vs")
+let currvoics;
+// 获取所有可用的语音列表
+function setSpeech() {
+    return new Promise(
+        function (resolve, reject) {
+            let synth = window.speechSynthesis;
+            let id;
+            id = setInterval(() => {
+                if (synth.getVoices().length !== 0) {
+                    resolve(synth.getVoices());
+                    clearInterval(id);
+                }
+            }, 10);
+        }
+    )
+}
+
+let s = setSpeech();
+s.then((voices) =>{
+
+  if(vs.innerHTML === ""){
+  var selectedVoice = voices.some(function(voice) {
+  if(voice.lang === 'zh-CN'){
+    let m=document.createElement("option")
+    m.innerText=voice.name;
+    m.setAttribute("yuan",voice)
+    vs.appendChild(m)
+    currvoics=voice
+    // utterance.voice=voice
+  }
+});
+
+}
+
+
+vs.addEventListener("change",function(e){
+
+  let a=0;
+  var selectedVoice = voices.some(function(voice) {
+  
+ 
+  if(voice.lang === 'zh-CN'){
+    a++;
+    if(a === vs.options.selectedIndex){
+    
+      currvoics=voice
+    }
+  }
+});
+
+
+
+})
+
+
+
+  
+
+
+
+});
+
+// 创建 SpeechRecognition 对象
+var recognition = new webkitSpeechRecognition();
+recognition.continuous = true;
+recognition.interimResults = false;
+recognition.lang = 'zh-CN';
+// recognition.maxAlternatives = 1;
+
+// 判断是否有麦克风
+navigator.mediaDevices.getUserMedia({audio: true})
+.then(function(stream) {
+  var tracks = stream.getAudioTracks();
+  if (tracks.length === 0) {
+    throw new Error('No microphone available.');
+  }
+
+  // 开始语音识别
+  recognition.start();
+
+  // 监听识别结果
+  recognition.onresult = function(event) {
+    // 将用户的语音输入输出回音
+    var transcript = event.results[0][0].transcript;
+    var utterance = new SpeechSynthesisUtterance(transcript);
+// 获取用户所选的语音
+
+
+
+utterance.voice = currvoics;
+
+    recognition.stop()
+    window.speechSynthesis.speak(utterance);
+    document.getElementById("msg").innerText=utterance.text
+    console.log(utterance)
+
+    // 监听说话结束事件
+    utterance.onend = function() {
+      console.log('说话完成');
+      recognition.start();
+    };
+
+
+
+    // 继续监听识别结果
+    // recognition.start();
+  };
+
+  // 如果出错，则抛出异常
+  recognition.onerror = function(event) {
+    if(event.error == "no-speech"){
+      console.log("no-speech",recognition.isRunning)
+      // 如何检测到没有说话,就不断尝试重新开始
+        let d=0
+          d=setInterval(()=>{
+            try{
+              recognition.start()
+              clearInterval(d)
+            }catch(e){
+              console.log("继续吧")
+            }
+          },1)
+      }else{
+        throw new Error(event.error);
+      }
+
+
+  };
+
+
+
+
+  recognition.onnomatch = function() {
+  console.log('Sorry, I did not recognize any speech.');
+};
+
+
+
+
+
+
+
+
+
+
+})
+
+.catch(function(error) {
+  console.error(error);
+  console.log(event)
+});
+
+
+
+
+
+
+
+  </script>
+</body>
+</html>
